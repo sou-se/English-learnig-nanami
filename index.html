@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>えいご ふくしゅうアプリ</title>
+<style>
+  :root {
+    --blue: #2f80ed;
+    --green: #27ae60;
+    --orange: #f2994a;
+    --red: #eb5757;
+    --bg: #f4f7fb;
+    --card: #ffffff;
+    --text: #2d3a4a;
+    --muted: #8a97a6;
+    --line: #e3e9f0;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  button, .item, nav button { touch-action: manipulation; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 18px;
+    line-height: 1.6;
+    padding-bottom: 90px;
+  }
+  header {
+    background: var(--blue);
+    color: #fff;
+    padding: 16px 20px;
+    font-size: 22px;
+    font-weight: 700;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 18px; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  .card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.05);
+  }
+  label { display: block; font-weight: 700; margin: 14px 0 6px; font-size: 16px; }
+  input[type=text], textarea {
+    width: 100%;
+    padding: 14px;
+    font-size: 18px;
+    border: 2px solid var(--line);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--text);
+  }
+  textarea { min-height: 70px; resize: vertical; }
+  input:focus, textarea:focus { outline: none; border-color: var(--blue); }
+
+  button {
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: 700;
+    border: none;
+    border-radius: 14px;
+    padding: 14px 18px;
+    cursor: pointer;
+    color: #fff;
+    background: var(--blue);
+    transition: transform .05s;
+  }
+  button:active { transform: scale(.97); }
+  .btn-green { background: var(--green); }
+  .btn-orange { background: var(--orange); }
+  .btn-red { background: var(--red); }
+  .btn-ghost { background: #eef3fa; color: var(--blue); }
+  .btn-wide { width: 100%; margin-top: 16px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .row > button { flex: 1; }
+
+  .speak {
+    background: #eef3fa; color: var(--blue);
+    border-radius: 50%; width: 48px; height: 48px;
+    padding: 0; font-size: 22px; flex: 0 0 auto;
+  }
+
+  /* nav */
+  nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: #fff; display: flex; border-top: 1px solid var(--line);
+    box-shadow: 0 -2px 10px rgba(0,0,0,.05);
+  }
+  nav button {
+    flex: 1; background: none; color: var(--muted);
+    border-radius: 0; padding: 12px 4px; font-size: 13px; font-weight: 700;
+  }
+  nav button .ico { display: block; font-size: 24px; margin-bottom: 2px; }
+  nav button.active { color: var(--blue); }
+
+  .item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px; border-bottom: 1px solid var(--line);
+  }
+  .item:last-child { border-bottom: none; }
+  .item .en { font-weight: 700; font-size: 19px; }
+  .item .ja { color: var(--muted); font-size: 15px; }
+  .item .memo { color: var(--muted); font-size: 13px; font-style: italic; }
+  .item .grow { flex: 1; min-width: 0; }
+  .badge {
+    background: #ffe9e3; color: var(--red); font-size: 12px; font-weight: 700;
+    padding: 2px 8px; border-radius: 10px; white-space: nowrap;
+  }
+  .mini { font-size: 14px; padding: 8px 10px; border-radius: 10px; }
+
+  .empty { text-align: center; color: var(--muted); padding: 40px 10px; }
+
+  /* flashcard */
+  .flash {
+    min-height: 220px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center;
+    cursor: pointer; padding: 30px 16px;
+  }
+  .flash .big { font-size: 30px; font-weight: 700; }
+  .flash .sub { color: var(--muted); margin-top: 12px; font-size: 15px; }
+  .progress { text-align: center; color: var(--muted); margin-bottom: 10px; }
+
+  /* quiz */
+  .q-prompt { font-size: 28px; font-weight: 700; text-align: center; margin: 10px 0 4px; }
+  .choice {
+    width: 100%; text-align: left; background: #fff; color: var(--text);
+    border: 2px solid var(--line); margin-top: 12px;
+  }
+  .choice.correct { background: #e6f7ee; border-color: var(--green); color: var(--green); }
+  .choice.wrong { background: #fdecec; border-color: var(--red); color: var(--red); }
+
+  .result-mark { font-size: 60px; text-align: center; margin: 10px 0; }
+  .heard { text-align: center; color: var(--muted); }
+  select {
+    width: 100%; padding: 12px; font-size: 16px; border: 2px solid var(--line);
+    border-radius: 12px; background: #fff; color: var(--text);
+  }
+  .hint { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  h2 { font-size: 20px; margin: 4px 0 14px; }
+</style>
+</head>
+<body>
+<header>えいご ふくしゅうアプリ</header>
+
+<main>
+  <!-- ===== 登録 ===== -->
+  <section id="screen-add" class="screen active">
+    <div class="card">
+      <h2>あたらしく登録</h2>
+      <label>英語（単語・熟語・文）</label>
+      <input type="text" id="in-en" placeholder="例: take it easy" autocomplete="off">
+      <button class="btn-ghost mini" id="btn-translate" style="margin-top:8px;">日本語を自動で入れる（翻訳）</button>
+      <div class="hint" id="translate-hint"></div>
+
+      <label>日本語の意味</label>
+      <input type="text" id="in-ja" placeholder="例: 気楽にね" autocomplete="off">
+
+      <label>メモ・例文（任意）</label>
+      <textarea id="in-memo" placeholder="例: 別れぎわのあいさつにも使う"></textarea>
+
+      <button class="btn-green btn-wide" id="btn-save">登録する</button>
+    </div>
+  </section>
+
+  <!-- ===== 一覧 ===== -->
+  <section id="screen-list" class="screen">
+    <div class="card">
+      <h2>登録した一覧（<span id="count">0</span>件）</h2>
+      <div id="list"></div>
+    </div>
+  </section>
+
+  <!-- ===== 復習 ===== -->
+  <section id="screen-study" class="screen">
+    <div class="card" id="study-menu">
+      <h2>復習メニュー</h2>
+      <button class="btn-wide" id="m-flash">カードで暗記（英語⇄意味）</button>
+      <button class="btn-wide btn-orange" id="m-quiz">4択クイズ</button>
+      <button class="btn-wide btn-green" id="m-speak">発音チェック（マイク）</button>
+    </div>
+
+    <!-- flashcard -->
+    <div class="card" id="study-flash" style="display:none;">
+      <div class="progress" id="flash-prog"></div>
+      <div class="flash" id="flash-card">
+        <div class="big" id="flash-front"></div>
+        <div class="sub">タップで答えを表示</div>
+      </div>
+      <div class="row">
+        <button class="speak" id="flash-speak">🔊</button>
+        <button class="btn-ghost" id="flash-prev">◀ まえ</button>
+        <button class="btn-ghost" id="flash-flip">めくる</button>
+        <button id="flash-next">つぎ ▶</button>
+      </div>
+      <button class="btn-ghost btn-wide" id="flash-exit">メニューに戻る</button>
+    </div>
+
+    <!-- quiz -->
+    <div class="card" id="study-quiz" style="display:none;">
+      <div class="progress" id="quiz-prog"></div>
+      <div class="row" style="justify-content:center;">
+        <div class="q-prompt" id="quiz-prompt"></div>
+        <button class="speak" id="quiz-speak">🔊</button>
+      </div>
+      <div id="quiz-choices"></div>
+      <button class="btn-ghost btn-wide" id="quiz-exit" style="margin-top:18px;">メニューに戻る</button>
+    </div>
+
+    <!-- speech check -->
+    <div class="card" id="study-speak" style="display:none;">
+      <div class="progress" id="sp-prog"></div>
+      <div class="q-prompt" id="sp-target"></div>
+      <div class="row" style="justify-content:center;">
+        <button class="speak" id="sp-listen-model">🔊</button>
+      </div>
+      <p class="hint" style="text-align:center;">「🎤 はなす」を押して、英語を声に出して言ってみよう</p>
+      <button class="btn-green btn-wide" id="sp-mic">🎤 はなす</button>
+      <div class="result-mark" id="sp-mark"></div>
+      <div class="heard" id="sp-heard"></div>
+      <div class="row" id="sp-next-row" style="display:none;">
+        <button id="sp-next">つぎ ▶</button>
+      </div>
+      <button class="btn-ghost btn-wide" id="sp-exit" style="margin-top:14px;">メニューに戻る</button>
+    </div>
+  </section>
+
+  <!-- ===== 設定 ===== -->
+  <section id="screen-set" class="screen">
+    <div class="card">
+      <h2>音声（女性の声）</h2>
+      <select id="voice-select"></select>
+      <button class="btn-ghost btn-wide" id="voice-test">テスト再生</button>
+      <p class="hint">英語の女性の声を自動で選んでいます。変えたいときはここで選べます。</p>
+    </div>
+    <div class="card">
+      <h2>クラウド保存（消えない場所）</h2>
+      <label>連携URL（GASのウェブアプリURL）</label>
+      <input type="text" id="gas-url" placeholder="https://script.google.com/macros/s/..../exec" autocomplete="off">
+      <div class="row" style="margin-top:10px;">
+        <button class="btn-green" id="btn-gas-save">保存</button>
+        <button class="btn-ghost" id="btn-gas-test">接続テスト</button>
+      </div>
+      <div class="hint" id="gas-status">未設定（このタブレットの中だけに保存されます）</div>
+      <p class="hint">URLを設定すると、記録が自動でスプレッドシートにも保存され、ブラウザのデータを消しても復元できます。AIの例文づくりにもこのURLを使います。</p>
+    </div>
+    <div class="card">
+      <h2>バックアップ（ファイル）</h2>
+      <button class="btn-wide" id="btn-export">記録をダウンロード（保存）</button>
+      <button class="btn-ghost btn-wide" id="btn-import">ファイルから読み込み</button>
+      <input type="file" id="file-input" accept="application/json" style="display:none;">
+      <p class="hint">クラウドとは別に、ファイルでも手元に保存できます。</p>
+    </div>
+  </section>
+</main>
+
+<nav>
+  <button data-screen="add" class="active"><span class="ico">✏️</span>登録</button>
+  <button data-screen="list"><span class="ico">📋</span>一覧</button>
+  <button data-screen="study"><span class="ico">🎯</span>復習</button>
+  <button data-screen="set"><span class="ico">⚙️</span>設定</button>
+</nav>
+
+<script>
+"use strict";
+
+const KEY = "eigo_phrases_v1";
+const VOICE_KEY = "eigo_voice_v1";
+const GAS_KEY = "eigo_gas_url_v1";
+
+/* ---------- data ---------- */
+function load() {
+  try { return JSON.parse(localStorage.getItem(KEY)) || []; }
+  catch (e) { return []; }
+}
+function save(items) {
+  localStorage.setItem(KEY, JSON.stringify(items));
+  scheduleCloudSave();
+}
+let items = load();
+
+function addItem(en, ja, memo) {
+  items.push({
+    id: Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+    en: en.trim(), ja: ja.trim(), memo: (memo || "").trim(),
+    wrong: 0, correct: 0, examples: null, createdAt: Date.now(), updatedAt: Date.now()
+  });
+  save(items);
+}
+function deleteItem(id) {
+  items = items.filter(function (x) { return x.id !== id; });
+  save(items);
+}
+
+/* ---------- cloud (GAS + spreadsheet) ---------- */
+let gasUrl = localStorage.getItem(GAS_KEY) || "";
+let cloudSaveTimer = null;
+function cloudEnabled() { return !!gasUrl; }
+
+function gasPost(body) {
+  // text/plain にして CORS プリフライトを避ける（GASでJSONとして解釈）
+  return fetch(gasUrl, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(body)
+  }).then(function (r) { return r.json(); });
+}
+
+function scheduleCloudSave() {
+  if (!cloudEnabled()) return;
+  if (cloudSaveTimer) clearTimeout(cloudSaveTimer);
+  cloudSaveTimer = setTimeout(cloudSaveNow, 1500);
+}
+function cloudSaveNow() {
+  if (!cloudEnabled()) return Promise.resolve();
+  return gasPost({ action: "save", items: items })
+    .then(function () { setCloudStatus("クラウドに保存済み ✓"); })
+    .catch(function () { setCloudStatus("クラウド保存に失敗（ネット確認）", true); });
+}
+function cloudLoad() {
+  if (!cloudEnabled()) return Promise.resolve(null);
+  return gasPost({ action: "load" })
+    .then(function (res) { return (res && res.ok) ? res.items : null; })
+    .catch(function () { return null; });
+}
+function setCloudStatus(msg, warn) {
+  const el = document.getElementById("gas-status");
+  if (el) { el.textContent = msg; el.style.color = warn ? "#eb5757" : "#27ae60"; }
+}
+
+// 起動時：クラウドに記録があれば復元、無ければ手元の記録を押し上げる
+function syncOnStart() {
+  if (!cloudEnabled()) return;
+  setCloudStatus("クラウドと同期中...");
+  cloudLoad().then(function (cloudItems) {
+    if (cloudItems && cloudItems.length) {
+      items = cloudItems; save(items);
+      renderList();
+      setCloudStatus("クラウドから復元しました（" + items.length + "件）");
+    } else if (items.length) {
+      cloudSaveNow();
+    } else {
+      setCloudStatus("クラウド連携中（記録はまだありません）");
+    }
+  });
+}
+
+/* ---------- navigation ---------- */
+const navBtns = document.querySelectorAll("nav button");
+navBtns.forEach(function (b) {
+  b.addEventListener("click", function () { showScreen(b.dataset.screen); });
+});
+function showScreen(name) {
+  document.querySelectorAll(".screen").forEach(function (s) { s.classList.remove("active"); });
+  document.getElementById("screen-" + name).classList.add("active");
+  navBtns.forEach(function (b) { b.classList.toggle("active", b.dataset.screen === name); });
+  if (name === "list") renderList();
+  if (name === "study") openStudyMenu();
+  window.scrollTo(0, 0);
+}
+
+/* ---------- speech synthesis (女性ボイス) ---------- */
+let voices = [];
+let chosenVoice = null;
+const FEMALE_HINTS = ["samantha","karen","moira","tessa","victoria","fiona","serena","susan","zira","female","catherine","allison","ava","kate","stephanie"];
+
+function loadVoices() {
+  voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+  const en = voices.filter(function (v) { return /^en/i.test(v.lang); });
+  const sel = document.getElementById("voice-select");
+  sel.innerHTML = "";
+  en.forEach(function (v, i) {
+    const o = document.createElement("option");
+    o.value = v.name;
+    o.textContent = v.name + " (" + v.lang + ")";
+    sel.appendChild(o);
+  });
+  // pick saved or auto female
+  const saved = localStorage.getItem(VOICE_KEY);
+  let pick = en.find(function (v) { return v.name === saved; });
+  if (!pick) {
+    pick = en.find(function (v) {
+      const n = v.name.toLowerCase();
+      return FEMALE_HINTS.some(function (h) { return n.indexOf(h) !== -1; });
+    });
+  }
+  if (!pick && en.length) pick = en[0];
+  chosenVoice = pick || null;
+  if (chosenVoice) sel.value = chosenVoice.name;
+}
+if (window.speechSynthesis) {
+  loadVoices();
+  window.speechSynthesis.onvoiceschanged = loadVoices;
+}
+document.getElementById("voice-select").addEventListener("change", function (e) {
+  chosenVoice = voices.find(function (v) { return v.name === e.target.value; }) || null;
+  if (chosenVoice) localStorage.setItem(VOICE_KEY, chosenVoice.name);
+});
+document.getElementById("voice-test").addEventListener("click", function () {
+  speak("Hello, let's study English!");
+});
+function speak(text) {
+  if (!window.speechSynthesis) { alert("この端末は読み上げに対応していません"); return; }
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  if (chosenVoice) { u.voice = chosenVoice; u.lang = chosenVoice.lang; }
+  else u.lang = "en-US";
+  u.rate = 0.9;
+  window.speechSynthesis.speak(u);
+}
+
+/* ---------- add screen ---------- */
+document.getElementById("btn-save").addEventListener("click", function () {
+  const en = document.getElementById("in-en").value;
+  const ja = document.getElementById("in-ja").value;
+  const memo = document.getElementById("in-memo").value;
+  if (!en.trim()) { alert("英語を入力してね"); return; }
+  addItem(en, ja, memo);
+  document.getElementById("in-en").value = "";
+  document.getElementById("in-ja").value = "";
+  document.getElementById("in-memo").value = "";
+  document.getElementById("translate-hint").textContent = "";
+  flash("登録しました！");
+});
+
+document.getElementById("btn-translate").addEventListener("click", async function () {
+  const en = document.getElementById("in-en").value.trim();
+  const hint = document.getElementById("translate-hint");
+  if (!en) { alert("先に英語を入力してね"); return; }
+  hint.textContent = "翻訳中...";
+  try {
+    const url = "https://api.mymemory.translated.net/get?q=" + encodeURIComponent(en) + "&langpair=en|ja";
+    const res = await fetch(url);
+    const data = await res.json();
+    const t = data && data.responseData && data.responseData.translatedText;
+    if (t) {
+      document.getElementById("in-ja").value = t;
+      hint.textContent = "翻訳候補を入れました（必要なら直してね）";
+    } else { hint.textContent = "うまく翻訳できませんでした。手で入力してね"; }
+  } catch (e) {
+    hint.textContent = "翻訳に失敗（ネット接続を確認してね）。手で入力できます";
+  }
+});
+
+function flash(msg) {
+  const d = document.createElement("div");
+  d.textContent = msg;
+  d.style.cssText = "position:fixed;left:50%;top:80px;transform:translateX(-50%);background:#27ae60;color:#fff;padding:12px 22px;border-radius:30px;font-weight:700;z-index:99;box-shadow:0 4px 12px rgba(0,0,0,.2)";
+  document.body.appendChild(d);
+  setTimeout(function () { d.remove(); }, 1400);
+}
+
+/* ---------- list screen ---------- */
+function renderList() {
+  document.getElementById("count").textContent = items.length;
+  const box = document.getElementById("list");
+  box.innerHTML = "";
+  if (!items.length) {
+    box.innerHTML = '<div class="empty">まだ登録がありません。<br>「登録」から追加してね。</div>';
+    return;
+  }
+  const sorted = items.slice().sort(function (a, b) { return b.createdAt - a.createdAt; });
+  sorted.forEach(function (it) {
+    const wrap = document.createElement("div");
+    wrap.style.cssText = "border-bottom:1px solid var(--line);padding:14px 0;";
+
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;align-items:center;gap:12px;";
+    const sp = document.createElement("button");
+    sp.className = "speak";
+    sp.textContent = "🔊";
+    sp.addEventListener("click", function () { speak(it.en); });
+    const g = document.createElement("div");
+    g.className = "grow";
+    g.innerHTML = '<div class="en"></div><div class="ja"></div>' + (it.memo ? '<div class="memo"></div>' : '');
+    g.querySelector(".en").textContent = it.en;
+    g.querySelector(".ja").textContent = it.ja || "（意味なし）";
+    if (it.memo) g.querySelector(".memo").textContent = it.memo;
+    const right = document.createElement("div");
+    right.style.cssText = "display:flex;flex-direction:column;gap:6px;align-items:flex-end;";
+    if (it.wrong > 0) {
+      const b = document.createElement("span");
+      b.className = "badge";
+      b.textContent = "✕" + it.wrong;
+      right.appendChild(b);
+    }
+    const del = document.createElement("button");
+    del.className = "btn-red mini";
+    del.textContent = "削除";
+    del.addEventListener("click", function () {
+      if (confirm("「" + it.en + "」を削除しますか？")) { deleteItem(it.id); renderList(); }
+    });
+    right.appendChild(del);
+    row.appendChild(sp); row.appendChild(g); row.appendChild(right);
+    wrap.appendChild(row);
+
+    const aiBtn = document.createElement("button");
+    aiBtn.className = "btn-ghost mini";
+    aiBtn.style.marginTop = "10px";
+    aiBtn.textContent = it.examples ? "✨例文・クイズを作りなおす" : "✨AIで例文・クイズを作る";
+    aiBtn.addEventListener("click", function () { generateAI(it.id, aiBtn); });
+    wrap.appendChild(aiBtn);
+
+    if (it.examples) wrap.appendChild(renderExamples(it.examples));
+
+    box.appendChild(wrap);
+  });
+}
+
+/* ---------- study menu ---------- */
+function openStudyMenu() {
+  document.getElementById("study-menu").style.display = "block";
+  document.getElementById("study-flash").style.display = "none";
+  document.getElementById("study-quiz").style.display = "none";
+  document.getElementById("study-speak").style.display = "none";
+}
+function needItems(min) {
+  if (items.length < min) {
+    alert("先に" + min + "件以上登録してね（いまは" + items.length + "件）");
+    return false;
+  }
+  return true;
+}
+// 苦手優先で並べる（間違い多い順、その後ランダム）
+function studyOrder() {
+  return items.slice().sort(function (a, b) {
+    if (b.wrong !== a.wrong) return b.wrong - a.wrong;
+    return Math.random() - 0.5;
+  });
+}
+
+document.getElementById("m-flash").addEventListener("click", function () {
+  if (!needItems(1)) return;
+  startFlash();
+});
+document.getElementById("m-quiz").addEventListener("click", function () {
+  if (!needItems(2)) return;
+  startQuiz();
+});
+document.getElementById("m-speak").addEventListener("click", function () {
+  if (!needItems(1)) return;
+  startSpeak();
+});
+
+/* ---------- flashcard ---------- */
+let fOrder = [], fIdx = 0, fFlipped = false;
+function startFlash() {
+  document.getElementById("study-menu").style.display = "none";
+  document.getElementById("study-flash").style.display = "block";
+  fOrder = studyOrder(); fIdx = 0; fFlipped = false;
+  renderFlash();
+}
+function renderFlash() {
+  const it = fOrder[fIdx];
+  document.getElementById("flash-prog").textContent = (fIdx + 1) + " / " + fOrder.length;
+  const front = document.getElementById("flash-front");
+  const sub = document.querySelector("#flash-card .sub");
+  if (!fFlipped) {
+    front.textContent = it.en;
+    sub.textContent = "タップで意味を表示";
+  } else {
+    front.textContent = it.ja || "（意味なし）";
+    sub.textContent = it.memo ? it.memo : "タップで英語に戻る";
+  }
+}
+document.getElementById("flash-card").addEventListener("click", function () {
+  fFlipped = !fFlipped; renderFlash();
+});
+document.getElementById("flash-flip").addEventListener("click", function () {
+  fFlipped = !fFlipped; renderFlash();
+});
+document.getElementById("flash-next").addEventListener("click", function () {
+  fIdx = (fIdx + 1) % fOrder.length; fFlipped = false; renderFlash();
+});
+document.getElementById("flash-prev").addEventListener("click", function () {
+  fIdx = (fIdx - 1 + fOrder.length) % fOrder.length; fFlipped = false; renderFlash();
+});
+document.getElementById("flash-speak").addEventListener("click", function () {
+  speak(fOrder[fIdx].en);
+});
+document.getElementById("flash-exit").addEventListener("click", openStudyMenu);
+
+/* ---------- quiz (4択: 英語→意味) ---------- */
+let qOrder = [], qIdx = 0, qAnswered = false;
+function startQuiz() {
+  document.getElementById("study-menu").style.display = "none";
+  document.getElementById("study-quiz").style.display = "block";
+  qOrder = studyOrder(); qIdx = 0;
+  renderQuiz();
+}
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+function renderQuiz() {
+  qAnswered = false;
+  const it = qOrder[qIdx];
+  document.getElementById("quiz-prog").textContent = (qIdx + 1) + " / " + qOrder.length;
+  document.getElementById("quiz-prompt").textContent = it.en;
+  // 選択肢
+  const others = items.filter(function (x) { return x.id !== it.id && x.ja; });
+  shuffle(others);
+  const distract = others.slice(0, 3).map(function (x) { return x.ja; });
+  const correctText = it.ja || "（意味なし）";
+  let opts = [correctText].concat(distract);
+  // 重複除去
+  opts = opts.filter(function (v, i) { return opts.indexOf(v) === i; });
+  shuffle(opts);
+  const box = document.getElementById("quiz-choices");
+  box.innerHTML = "";
+  opts.forEach(function (text) {
+    const b = document.createElement("button");
+    b.className = "choice";
+    b.textContent = text;
+    b.addEventListener("click", function () { answerQuiz(b, text, correctText, it); });
+    box.appendChild(b);
+  });
+}
+function answerQuiz(btn, picked, correctText, it) {
+  if (qAnswered) return;
+  qAnswered = true;
+  const buttons = document.querySelectorAll("#quiz-choices .choice");
+  buttons.forEach(function (b) {
+    if (b.textContent === correctText) b.classList.add("correct");
+    if (b === btn && picked !== correctText) b.classList.add("wrong");
+  });
+  // 記録更新
+  const ref = items.find(function (x) { return x.id === it.id; });
+  if (ref) {
+    if (picked === correctText) ref.correct++; else ref.wrong++;
+    save(items);
+  }
+  speak(it.en);
+  const next = document.createElement("button");
+  next.className = "btn-wide";
+  next.style.marginTop = "16px";
+  next.textContent = (qIdx + 1 < qOrder.length) ? "つぎの問題 ▶" : "もう一周する 🔁";
+  next.addEventListener("click", function () {
+    if (qIdx + 1 < qOrder.length) { qIdx++; renderQuiz(); }
+    else { qOrder = studyOrder(); qIdx = 0; renderQuiz(); }
+  });
+  document.getElementById("quiz-choices").appendChild(next);
+}
+document.getElementById("quiz-speak").addEventListener("click", function () {
+  if (qOrder.length) speak(qOrder[qIdx].en);
+});
+document.getElementById("quiz-exit").addEventListener("click", openStudyMenu);
+
+/* ---------- speech check ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let spOrder = [], spIdx = 0, recog = null;
+function startSpeak() {
+  document.getElementById("study-menu").style.display = "none";
+  document.getElementById("study-speak").style.display = "block";
+  spOrder = studyOrder(); spIdx = 0;
+  renderSpeak();
+}
+function renderSpeak() {
+  const it = spOrder[spIdx];
+  document.getElementById("sp-prog").textContent = (spIdx + 1) + " / " + spOrder.length;
+  document.getElementById("sp-target").textContent = it.en;
+  document.getElementById("sp-mark").textContent = "";
+  document.getElementById("sp-heard").textContent = "";
+  document.getElementById("sp-next-row").style.display = "none";
+}
+function normalize(s) {
+  return s.toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim();
+}
+function similarity(a, b) {
+  // 単語一致率
+  const wa = normalize(a).split(" ").filter(Boolean);
+  const wb = normalize(b).split(" ").filter(Boolean);
+  if (!wa.length || !wb.length) return 0;
+  let hit = 0;
+  const used = [];
+  wa.forEach(function (w) {
+    const idx = wb.findIndex(function (x, i) { return x === w && used.indexOf(i) === -1; });
+    if (idx !== -1) { hit++; used.push(idx); }
+  });
+  return hit / Math.max(wa.length, wb.length);
+}
+document.getElementById("sp-listen-model").addEventListener("click", function () {
+  speak(spOrder[spIdx].en);
+});
+document.getElementById("sp-mic").addEventListener("click", function () {
+  if (!SR) { alert("この端末は音声認識に対応していません（Safari/Chromeで、ネット接続が必要です）"); return; }
+  const it = spOrder[spIdx];
+  const mark = document.getElementById("sp-mark");
+  const heard = document.getElementById("sp-heard");
+  mark.textContent = "🎤..."; heard.textContent = "聞いています...";
+  recog = new SR();
+  recog.lang = "en-US";
+  recog.interimResults = false;
+  recog.maxAlternatives = 3;
+  recog.onresult = function (e) {
+    let best = "";
+    for (let i = 0; i < e.results[0].length; i++) {
+      const alt = e.results[0][i].transcript;
+      if (similarity(alt, it.en) > similarity(best, it.en)) best = alt;
+    }
+    heard.textContent = "きこえた英語：" + best;
+    const score = similarity(best, it.en);
+    const ref = items.find(function (x) { return x.id === it.id; });
+    if (score >= 0.7) {
+      mark.textContent = "◯";
+      mark.style.color = "#27ae60";
+      if (ref) { ref.correct++; save(items); }
+    } else {
+      mark.textContent = "△";
+      mark.style.color = "#f2994a";
+      if (ref) { ref.wrong++; save(items); }
+    }
+    document.getElementById("sp-next-row").style.display = "flex";
+  };
+  recog.onerror = function (ev) {
+    mark.textContent = "";
+    heard.textContent = (ev.error === "not-allowed")
+      ? "マイクの使用を許可してね"
+      : "うまく聞き取れませんでした。もう一度ためしてね";
+    document.getElementById("sp-next-row").style.display = "flex";
+  };
+  recog.start();
+});
+document.getElementById("sp-next").addEventListener("click", function () {
+  spIdx = (spIdx + 1) % spOrder.length;
+  renderSpeak();
+});
+document.getElementById("sp-exit").addEventListener("click", openStudyMenu);
+
+/* ---------- backup ---------- */
+document.getElementById("btn-export").addEventListener("click", function () {
+  const blob = new Blob([JSON.stringify(items, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const d = new Date();
+  const stamp = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  a.href = url;
+  a.download = "eigo-backup-" + stamp + ".json";
+  a.click();
+  URL.revokeObjectURL(url);
+});
+document.getElementById("btn-import").addEventListener("click", function () {
+  document.getElementById("file-input").click();
+});
+document.getElementById("file-input").addEventListener("change", function (e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function () {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!Array.isArray(data)) throw new Error("形式が違います");
+      if (confirm("読み込むと今の記録は置きかえられます。よろしいですか？")) {
+        items = data; save(items);
+        flash("読み込みました！");
+        renderList();
+      }
+    } catch (err) {
+      alert("ファイルを読み込めませんでした");
+    }
+    e.target.value = "";
+  };
+  reader.readAsText(file);
+});
+
+/* ---------- GAS settings ---------- */
+(function initGasSettings() {
+  const input = document.getElementById("gas-url");
+  input.value = gasUrl;
+  if (gasUrl) setCloudStatus("クラウド連携ON");
+  document.getElementById("btn-gas-save").addEventListener("click", function () {
+    gasUrl = input.value.trim();
+    localStorage.setItem(GAS_KEY, gasUrl);
+    if (gasUrl) { flash("保存しました"); syncOnStart(); }
+    else setCloudStatus("未設定（このタブレットの中だけに保存されます）");
+  });
+  document.getElementById("btn-gas-test").addEventListener("click", function () {
+    const url = input.value.trim();
+    if (!url) { alert("先にURLを入力してね"); return; }
+    setCloudStatus("接続テスト中...");
+    const saved = gasUrl; gasUrl = url;
+    cloudLoad().then(function (res) {
+      gasUrl = saved;
+      if (res === null) setCloudStatus("つながりませんでした。URLと公開設定を確認してね", true);
+      else setCloudStatus("接続OK！（クラウドに " + res.length + " 件）");
+    });
+  });
+})();
+
+/* ---------- AI 例文・クイズ生成 ---------- */
+function generateAI(id, btn) {
+  if (!cloudEnabled()) { alert("先に「設定」でクラウド連携URLを設定してね（AIもこのURLを使います）"); return; }
+  const it = items.find(function (x) { return x.id === id; });
+  if (!it) return;
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = "作成中...";
+  gasPost({ action: "ai", en: it.en, ja: it.ja }).then(function (res) {
+    btn.disabled = false; btn.textContent = orig;
+    if (res && res.ok && res.result) {
+      it.examples = res.result;
+      it.updatedAt = Date.now();
+      save(items);
+      renderList();
+    } else {
+      alert("AI生成に失敗しました：" + ((res && res.error) || "不明なエラー"));
+    }
+  }).catch(function () {
+    btn.disabled = false; btn.textContent = orig;
+    alert("AI生成に失敗しました（ネット接続を確認してね）");
+  });
+}
+
+function renderExamples(ex) {
+  const box = document.createElement("div");
+  box.style.cssText = "margin-top:10px;background:#f4f7fb;border-radius:12px;padding:12px;";
+  if (ex.examples && ex.examples.length) {
+    ex.examples.forEach(function (s) {
+      const line = document.createElement("div");
+      line.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:8px;";
+      const sp = document.createElement("button");
+      sp.className = "speak"; sp.style.cssText = "width:40px;height:40px;font-size:18px;";
+      sp.textContent = "🔊";
+      sp.addEventListener("click", function () { speak(s.en); });
+      const t = document.createElement("div");
+      t.className = "grow";
+      t.innerHTML = '<div style="font-weight:700;"></div><div style="color:#8a97a6;font-size:14px;"></div>';
+      t.children[0].textContent = s.en;
+      t.children[1].textContent = s.ja || "";
+      line.appendChild(sp); line.appendChild(t);
+      box.appendChild(line);
+    });
+  }
+  if (ex.quiz && ex.quiz.choices) {
+    const q = document.createElement("div");
+    q.style.cssText = "margin-top:6px;padding-top:10px;border-top:1px solid #e3e9f0;";
+    const qt = document.createElement("div");
+    qt.style.cssText = "font-weight:700;margin-bottom:8px;";
+    qt.textContent = "クイズ：" + ex.quiz.question;
+    q.appendChild(qt);
+    ex.quiz.choices.forEach(function (c, i) {
+      const b = document.createElement("button");
+      b.className = "choice"; b.style.marginTop = "6px";
+      b.textContent = c;
+      b.addEventListener("click", function () {
+        const right = (i === ex.quiz.answer);
+        b.classList.add(right ? "correct" : "wrong");
+        if (!right) {
+          const btns = q.querySelectorAll(".choice");
+          btns[ex.quiz.answer].classList.add("correct");
+        }
+      });
+      q.appendChild(b);
+    });
+    box.appendChild(q);
+  }
+  return box;
+}
+
+/* ---------- startup ---------- */
+syncOnStart();
+</script>
+</body>
+</html>
